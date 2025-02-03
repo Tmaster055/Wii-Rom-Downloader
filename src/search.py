@@ -1,66 +1,58 @@
-import requests
 import curses
-
+import urllib3
+import requests
 from bs4 import BeautifulSoup
 
-def get_search_results(answer: str):
-    result = f"https://vimm.net/vault/?p=list&system=Wii&q={answer}"
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
-    response = requests.get(result, timeout=15)
+
+def fetch_links(query):
+    url = f"https://vimm.net/vault/?p=list&system=Wii&q={query}"
+    response = requests.get(url, timeout=15, verify=False)
     soup = BeautifulSoup(response.content, "html.parser")
 
-    links = []
-
-    for a_tag in soup.find_all('a', href=True):
-        parent = a_tag.parent
-        if parent.name == 'td' and 'width:auto' in parent.get('style', ''):
-            title = a_tag.text.strip()
-            link = result + a_tag['href']
-            links.append((title, link))
+    links = [
+        (a.text.strip(), f"https://vimm.net{a['href']}")
+        for a in soup.find_all('a', href=True)
+        if a.parent.name == 'td' and 'width:auto' in a.parent.get('style', '')
+    ]
 
     if not links:
         raise ValueError("No results found.")
 
-    for link in links:
-        print(link)
+    return links
 
-    def curses_menu(stdscr, links):
-        curses.curs_set(0)
-        current_row = 0
 
-        while True:
-            try:
-                stdscr.clear()
+def curses_menu(stdscr, links):
+    curses.curs_set(0)
+    curses.start_color()
+    curses.init_pair(1, curses.COLOR_BLACK, curses.COLOR_WHITE)
+    current_row = 0
 
-                stdscr.addstr(0, 0, "Top 20 Results:", curses.A_BOLD)
+    while True:
+        stdscr.clear()
+        stdscr.addstr(0, 0, "Top 20 Results:", curses.A_BOLD)
 
-                for idx, (title, _) in enumerate(links):
-                    if idx == current_row:
-                        stdscr.addstr(idx + 2, 0, title.encode("utf-8"), curses.color_pair(1))
-                    else:
-                        stdscr.addstr(idx + 2, 0, title.encode("utf-8"))
+        for idx, (title, _) in enumerate(links[:20]):
+            stdscr.addstr(idx + 2, 0, title, curses.color_pair(1)
+                          if idx == current_row else 0)
 
-                stdscr.refresh()
+        stdscr.refresh()
+        key = stdscr.getch()
 
-                key = stdscr.getch()
+        if key == curses.KEY_UP and current_row > 0:
+            current_row -= 1
+        elif key == curses.KEY_DOWN and current_row < len(links[:20]) - 1:
+            current_row += 1
+        elif key in (10, 13):
+            return links[current_row][1]
+        elif key == 27:
+            return None
 
-                if key == curses.KEY_UP and current_row > 0:
-                    current_row -= 1
-                elif key == curses.KEY_DOWN and current_row < len(links) - 1:
-                    current_row += 1
-                elif key == curses.KEY_ENTER or key in [10, 13]:
-                    return links[current_row][1]
-                elif key == 27:
-                    return None
-            except Exception:
-                raise ValueError("Please increase terminal size!")
 
-    def main(stdscr):
-        curses.start_color()
-        curses.init_pair(1, curses.COLOR_BLACK, curses.COLOR_WHITE)
-        return curses_menu(stdscr, links)
+def main(query):
+    links = fetch_links(query)
+    return curses.wrapper(curses_menu, links)
 
-    selected_link = curses.wrapper(main)
-    return selected_link
 
-print(get_search_results("Just"))
+print(main("Just"))
