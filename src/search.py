@@ -11,11 +11,20 @@ def fetch_links(query):
     response = requests.get(url, timeout=15, verify=False)
     soup = BeautifulSoup(response.content, "html.parser")
 
-    links = [
-        (a.text.strip(), f"https://vimm.net{a['href']}")
-        for a in soup.find_all('a', href=True)
-        if a.parent.name == 'td' and 'width:auto' in a.parent.get('style', '')
-    ]
+    links = []
+    for a in soup.find_all('a', href=True):
+        if a.parent.name == 'td' and 'width:auto' in a.parent.get('style', ''):
+            title = a.text.strip()
+            link = f"https://vimm.net{a['href']}"
+
+            row = a.find_parent('tr')
+            if row:
+                img = row.find('img', class_='flag')
+                region = img['title'] if img and 'title' in img.attrs else "Unknown"
+            else:
+                region = "Unknown"
+            if "manual" not in link:
+                links.append((f"{title} ({region})", link))
 
     if not links:
         raise ValueError("No results found.")
