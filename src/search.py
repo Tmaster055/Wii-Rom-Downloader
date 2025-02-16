@@ -19,12 +19,15 @@ def fetch_links(query):
 
             row = a.find_parent('tr')
             if row:
-                img = row.find('img', class_='flag')
-                region = img['title'] if img and 'title' in img.attrs else "Unknown"
+                regions = [img['title'] for img in row.find_all('img', class_='flag') if 'title' in img.attrs]
+                region_text = ", ".join(regions) if regions else "Unknown"
+                extras_box = row.find('b', class_='redBorder')
+                extras_text = f" ({extras_box['title']})" if extras_box and 'title' in extras_box.attrs else ""
             else:
-                region = "Unknown"
+                region_text = "Unknown"
+                extras_text = ""
             if "manual" not in link:
-                links.append((f"{title} ({region})", link))
+                links.append((f"{title} ({region_text}){extras_text}", link))
 
     if not links:
         raise ValueError("No results found.")
