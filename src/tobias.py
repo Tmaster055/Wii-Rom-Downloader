@@ -1,11 +1,24 @@
+import os
+import time
+from tqdm import tqdm
+
+import py7zr
 import requests
+import urllib3
+
 
 from playwright.sync_api import sync_playwright
 from bs4 import BeautifulSoup
 
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+
 
 def main():
     with sync_playwright() as p:
+        download_path = os.path.join(os.path.expanduser("~"), "Downloads")
+        rom_downloader_path = os.path.join(download_path, "Rom-Downloader")
+        os.makedirs(rom_downloader_path, exist_ok=True)
+
         browser = p.chromium.launch(headless=False)
         context = browser.new_context(accept_downloads=True)
         page = context.new_page()
@@ -42,9 +55,50 @@ def main():
         else:
             print("Format selector not found.")
 
-        page.evaluate("setMediaId('dl_form', allMedia)")
-        page.evaluate(f"setFormat('dl_form', '{selected_format}', allMedia);")
-        page.evaluate("confirmPopup(document.forms['dl_form'], 'tooltip4');")
+
+        game_id = get_gametdb_id("https://vimm.net/vault/63633")
+        zip_path = os.path.join(rom_downloader_path, game_id + ".7z")
+        with page.expect_download() as download_info:
+            page.evaluate("setMediaId('dl_form', allMedia)")
+            page.evaluate(f"setFormat('dl_form', '{selected_format}', allMedia);")
+            page.evaluate("confirmPopup(document.forms['dl_form'], 'tooltip4');")
+
+        print("Downloading...")
+        download = download_info.value
+        download_path = download.path()
+        download.save_as(zip_path)
+
+        print(f"Download successful: {zip_path}")
+
+        folder_path = zip_path.replace(".7z", "")
+        with py7zr.SevenZipFile(zip_path, mode="r") as archive:
+            archive.extractall(folder_path)
+            print("Folder extracted!")
+
+        os.remove(zip_path)
+        print("Removed zipfile!")
+
+
+        for file in os.listdir(folder_path):
+            file_path = os.path.join(folder_path, file)
+
+            if os.path.isfile(file_path):
+                name, ext = os.path.splitext(file)
+
+                new_name = f"{game_id}{ext}"
+                new_path = os.path.join(folder_path, new_name)
+
+                os.rename(file_path, new_path)
+                print(f"Renamed: {file} → {new_name}")
+
+                if not "Vimm" in name:
+                    game = name.split("(")[0]
+                else:
+                    os.remove(new_path)
+
+        os.rename(folder_path, folder_path.replace(game_id, f"{game}[{game_id}]"))
+
+        print("All files have been renamed.")
 
         input("Press Enter to close...")
         browser.close()
