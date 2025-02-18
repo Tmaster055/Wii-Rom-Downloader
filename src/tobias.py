@@ -1,9 +1,5 @@
-import os
-import time
-import zipfile
 import requests
 
-from tqdm import tqdm
 from playwright.sync_api import sync_playwright
 from bs4 import BeautifulSoup
 
@@ -27,7 +23,8 @@ def main():
                 print(f"{idx}: {version}")
             version_choice = int(input("Choose version by number: "))
             selected_version = select_version.find_all("option")[version_choice]["value"]
-            page.select_option("#dl_version", selected_version)
+            if len(versions) != 1:
+                page.select_option("#dl_version", selected_version)
             print(f"Selected version: {versions[version_choice]}")
         else:
             print("Version selector not found.")
@@ -39,52 +36,15 @@ def main():
                 print(f"{idx}: {fmt}")
             format_choice = int(input("Choose format by number: "))
             selected_format = select_format.find_all("option")[format_choice]["value"]
-            page.select_option("#dl_format", selected_format)
+            if len(formats) != 1:
+                page.select_option("#dl_format", selected_format)
             print(f"Selected format: {formats[format_choice]}")
         else:
             print("Format selector not found.")
 
-        page.evaluate(f"setMediaId('dl_form', allMedia)")
+        page.evaluate("setMediaId('dl_form', allMedia)")
         page.evaluate(f"setFormat('dl_form', '{selected_format}', allMedia);")
         page.evaluate("confirmPopup(document.forms['dl_form'], 'tooltip4');")
-
-        with page.expect_download() as download_info:
-            page.evaluate("confirmPopup(document.forms['dl_form'], 'tooltip4');")
-
-        download = download_info.value
-        download_path = download.path()
-
-        new_filename = "000011000.7z"
-        new_path = os.path.join(os.path.dirname(download_path), new_filename)
-
-        print("Download gestartet...")
-
-        # Fortschrittsanzeige mit tqdm
-        start_time = time.time()
-        while not os.path.exists(download_path):
-            time.sleep(1)  # Warte, bis die Datei existiert
-
-        file_size = 0
-        with tqdm(unit="B", unit_scale=True, desc="Downloading") as pbar:
-            while True:
-                try:
-                    new_size = os.path.getsize(download_path)
-                    pbar.update(new_size - file_size)
-                    file_size = new_size
-
-                    if download.state == "completed":
-                        break
-                except FileNotFoundError:
-                    pass
-                time.sleep(1)  # Warte auf Updates
-
-        os.rename(download_path, new_path)
-        print(f"File saved as: {new_path}")
-
-        with zipfile.ZipFile(new_path, 'r') as zip_ref:
-            extract_path = os.path.splitext(new_path)[0]
-            zip_ref.extractall(extract_path)
-            print(f"Extracted to: {extract_path}")
 
         input("Press Enter to close...")
         browser.close()
