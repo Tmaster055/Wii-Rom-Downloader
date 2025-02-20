@@ -66,7 +66,8 @@ def main(query):
     links = fetch_links(query)
     return curses.wrapper(curses_menu, links)
 
-def search_for_rom():
+
+def search_for_rom_vimms():
     while True:
         answer = input("What rom do you want to download? ")
         if len(answer.replace(" ", "")) >= 3:
@@ -74,5 +75,6 @@ def search_for_rom():
         else:
             print("You need to type in 3 or more letters!")
 
+
 if __name__ == "__main__":
-    search_for_rom()
+    search_for_rom_vimms()
