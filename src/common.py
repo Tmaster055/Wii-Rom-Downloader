@@ -1,4 +1,5 @@
 import os
+import sys
 
 import py7zr
 import requests
@@ -52,7 +53,8 @@ def download_vimms_rom(url):
             print(f"Selected format: {formats[format_choice]}")
         else:
             print("Format selector not found.")
-
+            print("This rom is currently not downloadable!")
+            sys.exit()
 
         game_id = get_vimms_id(url)
         zip_path = os.path.join(rom_downloader_path, game_id + ".7z")
