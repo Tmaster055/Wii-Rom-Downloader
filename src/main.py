@@ -10,11 +10,15 @@ while True:
     answer = input("Which do you choose? ")
 
     if answer == "1":
-        url = search_for_rom_vimms()
-        download_vimms_rom(url)
+        while True:
+            url = search_for_rom_vimms()
+            if url is None:
+                pass
+            else:
+                download_vimms_rom(url)
+                break
         break
     elif answer == "2":
         print("Romsfun support is not yet available. Please choose another option.")
     else:
         print("Invalid input. Please enter 1 or 2.")
-
