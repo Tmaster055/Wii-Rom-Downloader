@@ -1,107 +1,14 @@
 import os
 import sys
-import cloudscraper
+import zipfile
 import py7zr
 import requests
 import urllib3
 
-
-from playwright.sync_api import sync_playwright
+from tqdm import tqdm
 from bs4 import BeautifulSoup
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
-
-
-def download_vimms_rom(url):
-    with sync_playwright() as p:
-        download_path = os.path.join(os.path.expanduser("~"), "Downloads")
-        rom_downloader_path = os.path.join(download_path, "Rom-Downloader")
-        os.makedirs(rom_downloader_path, exist_ok=True)
-
-        browser = p.chromium.launch(headless=False)
-        context = browser.new_context(accept_downloads=True)
-        page = context.new_page()
-        page.goto(url)
-
-        soup = BeautifulSoup(page.content(), "html.parser")
-
-        select_version = soup.find("select", {"id": "dl_version"})
-        select_format = soup.find("select", {"id": "dl_format"})
-
-        if select_version:
-            versions = [option.text for option in select_version.find_all("option")]
-            print("Available versions:")
-            for idx, version in enumerate(versions):
-                print(f"{idx}: {version}")
-            version_choice = int(input("Choose version by number: "))
-            selected_version = select_version.find_all("option")[version_choice]["value"]
-            if len(versions) != 1:
-                page.select_option("#dl_version", selected_version)
-            print(f"Selected version: {versions[version_choice]}")
-        else:
-            print("Version selector not found.")
-
-        if select_format:
-            formats = [option.text for option in select_format.find_all("option")]
-            print("Available formats:")
-            for idx, fmt in enumerate(formats):
-                print(f"{idx}: {fmt}")
-            format_choice = int(input("Choose format by number: "))
-            selected_format = select_format.find_all("option")[format_choice]["value"]
-            if len(formats) != 1:
-                page.select_option("#dl_format", selected_format)
-            print(f"Selected format: {formats[format_choice]}")
-        else:
-            print("Format selector not found.")
-            print("This rom is currently not downloadable!")
-            sys.exit()
-
-        game_id = get_vimms_id(url)
-        zip_path = os.path.join(rom_downloader_path, game_id + ".7z")
-        with page.expect_download() as download_info:
-            page.evaluate("setMediaId('dl_form', allMedia)")
-            page.evaluate(f"setFormat('dl_form', '{selected_format}', allMedia);")
-            page.evaluate("confirmPopup(document.forms['dl_form'], 'tooltip4');")
-
-        print("Downloading...")
-        download = download_info.value
-        download_path = download.path()
-        download.save_as(zip_path)
-        print(f"Download successful: {zip_path}")
-        browser.close()
-
-        print("Extracting Folders...")
-        folder_path = zip_path.replace(".7z", "")
-        with py7zr.SevenZipFile(zip_path, mode="r") as archive:
-            archive.extractall(folder_path)
-            print("Folders extracted!")
-
-        print("Removing zipfiles...")
-        os.remove(zip_path)
-        print("Removed zipfile!")
-
-        print("Renaming in id...")
-        for file in os.listdir(folder_path):
-            file_path = os.path.join(folder_path, file)
-
-            if os.path.isfile(file_path):
-                name, ext = os.path.splitext(file)
-
-                new_name = f"{game_id}{ext}"
-                new_path = os.path.join(folder_path, new_name)
-
-                os.rename(file_path, new_path)
-                print(f"Renamed: {file} → {new_name}")
-
-                if not "Vimm" in name:
-                    game = name.split("(")[0]
-                else:
-                    os.remove(new_path)
-
-        os.rename(folder_path, folder_path.replace(game_id, f"{game}[{game_id}]"))
-
-        print("All files have been renamed.")
-
 
 def get_vimms_id(url):
     response = requests.get(url, timeout=15, verify=False)
@@ -113,44 +20,67 @@ def get_vimms_id(url):
     return result
 
 
-def download_romsfun_rom(url):
-    scraper = cloudscraper.create_scraper()
-    response = scraper.get(url)
-
-    soup = BeautifulSoup(response.text, 'html.parser')
-    button = soup.select_one('.btn.btn-primary.btn-block.mx-auto.mb-4.small')
-
-    if button:
-        url = button.get('href')
-    else:
-        raise ValueError("Button-Element not found!")
-
-    response = scraper.get(url)
-    soup = BeautifulSoup(response.text, 'html.parser')
-    rom_links = soup.select('div.bg-white.border.rounded.shadow-sm.py-2.px-3.mb-4 table tbody tr td a')
-
-    print("Choose the ROM file you want to download:")
-    for index, rom in enumerate(rom_links, start=1):
-        print(f"{index}. {rom.text.strip()}")
-
+def download_file(url: str, installer_path: str, headers = None):
     try:
-        choice = int(input("Enter the number of the ROM you want to download: "))
-        if 1 <= choice <= len(rom_links):
-            selected_link = rom_links[choice - 1]['href']
+        if headers:
+            response = requests.get(url, stream=True, headers=headers)
         else:
-            print("Invalid choice. Please try again.")
-    except ValueError:
-        print("Invalid input. Please enter a number.")
+            response = requests.get(url, stream=True)
+        total_size = int(response.headers.get('content-length', 0))
+        block_size = 1024
+        t = tqdm(total=total_size, unit='B', unit_scale=True)
+        with open(installer_path, 'wb') as f:
+            for data in response.iter_content(block_size):
+                t.update(len(data))
+                f.write(data)
+        t.close()
+        print(f"Download was successful!")
+    except Exception as e:
+        print(f"Error while downloading: {e}")
+        if os.path.exists(installer_path):
+            os.remove(installer_path)
+        sys.exit(1)
 
-    with sync_playwright() as p:
-        browser = p.chromium.launch(headless=False)  # headless=True für unsichtbar
-        page = browser.new_page()
 
-        page.goto(selected_link, wait_until='domcontentloaded')
-        page.wait_for_selector('a#download')
-        download_link = page.query_selector('a#download').get_attribute('href')
+def extract_rename_folders(game_id: str, zip_path: str):
+    print("Extracting Folders...")
+    if ".7z" in zip_path:
+        folder_path = zip_path.replace(".7z", "")
+        with py7zr.SevenZipFile(zip_path, mode="r") as archive:
+            archive.extractall(folder_path)
+            print("Folders extracted!")
+    else:
+        folder_path = zip_path.replace(".zip", "")
+        with zipfile.ZipFile(zip_path, mode="r") as archive:
+            archive.extractall(folder_path)
+            print("Folders extracted!")
 
-        browser.close()
+    print("Removing zipfiles...")
+    os.remove(zip_path)
+    print("Removed zipfile!")
+
+    print("Renaming in id...")
+    for file in os.listdir(folder_path):
+        file_path = os.path.join(folder_path, file)
+
+        if os.path.isfile(file_path):
+            name, ext = os.path.splitext(file)
+
+            new_name = f"{game_id}{ext}"
+            new_path = os.path.join(folder_path, new_name)
+
+            os.rename(file_path, new_path)
+            print(f"Renamed: {file} → {new_name}")
+
+            if not ".txt" in ext:
+                game = name.split("(")[0]
+            else:
+                os.remove(new_path)
+
+    os.rename(folder_path, folder_path.replace(game_id, f"{game}[{game_id}]"))
+
+    print("All files have been renamed.")
+
 
 if __name__ == "__main__":
     pass

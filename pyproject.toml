@@ -16,7 +16,8 @@ dependencies = [
     'cloudscraper',
     'py7zr',
     'playwright',
-    'windows-curses'
+    'tqdm',
+    'windows-curses; platform_system == "Windows"'
 ]
 classifiers = [
     "Programming Language :: Python :: 3",
