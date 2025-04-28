@@ -113,6 +113,43 @@ def get_vimms_id(url):
     return result
 
 
+def download_romsfun_rom(url):
+    with sync_playwright() as p:
+        browser = p.chromium.launch(headless=False)
+        page = browser.new_page()
+
+        page.goto(url)
+
+        page.wait_for_selector('.btn.btn-primary.btn-block.mx-auto.mb-4.small')
+
+        download_page_url = page.query_selector('.btn.btn-primary.btn-block.mx-auto.mb-4.small').get_attribute('href')
+        print(f"Download page URL: {download_page_url}")
+
+        page.goto(download_page_url)
+
+        page.wait_for_selector('div.bg-white.border.rounded.shadow-sm.py-2.px-3.mb-4 table')
+
+        html = page.content()
+        soup = BeautifulSoup(html, 'html.parser')
+
+        rom_links = soup.select('div.bg-white.border.rounded.shadow-sm.py-2.px-3.mb-4 table tbody tr td a')
+
+        print("Choose the ROM file you want to download:")
+        for index, rom in enumerate(rom_links, start=1):
+            print(f"{index}. {rom.text.strip()}")
+
+        try:
+            choice = int(input("Enter the number of the ROM you want to download: "))
+            if 1 <= choice <= len(rom_links):
+                selected_link = rom_links[choice - 1]['href']
+            else:
+                print("Invalid choice. Please try again.")
+        except ValueError:
+            print("Invalid input. Please enter a number.")
+
+        browser.close()
+        return selected_link
+
 
 if __name__ == "__main__":
     pass
