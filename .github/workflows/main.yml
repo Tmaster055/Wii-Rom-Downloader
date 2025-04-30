@@ -47,7 +47,7 @@ jobs:
         shell: bash
         run: |
           Y=$(python -c "import datetime; print(datetime.datetime.now().year)")
-          python -m nuitka --onefile --assume-yes-for-downloads --playwright-include-browser=chromium \
+          python -m nuitka --onefile --assume-yes-for-downloads --playwright-include-browser=chromium --include-package=wii-roms-tool \
           --output-filename=Wii-Rom-Downloader-${{ matrix.filename }}${{ matrix.ext }} \
           --company-name="Tmaster055" \
           --product-name="Wii-Rom-Downloader" \
@@ -56,7 +56,7 @@ jobs:
           --file-description="A tool to download and correctly name roms for your wii" \
           --copyright="Copyright (c) 2024-$Y Tmaster055" \
           ${{ matrix.extra }} \
-          wii-roms-tool/src/main.py
+          wii_roms_tool/src/main.py
 
       - uses: actions/upload-artifact@v4
         with:
