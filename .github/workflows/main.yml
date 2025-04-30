@@ -18,15 +18,15 @@ jobs:
           - os: windows-latest
             ext: .exe
             filename: windows_x64
-            extra: --include-data-dir="/Users/runner/Library/Caches/ms-playwright=ms-playwright"
+            extra: ""
           - os: ubuntu-latest
             ext: ""
             filename: linux_x64
-            extra: --include-data-dir="/home/runner/.cache/ms-playwright=ms-playwright"
+            extra: ""
           - os: macos-latest
             ext: ""
             filename: macos_x64
-            extra: --include-data-dir="/Users/runner/Library/Caches/ms-playwright=ms-playwright"
+            extra: ""
 
     runs-on: ${{ matrix.os }}
 
@@ -38,18 +38,23 @@ jobs:
           python-version: '3.x'
 
       - name: Install dependencies
+        if: matrix.os == 'ubuntu-latest'
         run: |
           python -m pip install --upgrade pip
           pip install toml imageio nuitka
           pip install .
 
       - name: Build with Nuitka
+        if: matrix.os == 'ubuntu-latest'
         shell: bash
         run: |
           Y=$(python -c "import datetime; print(datetime.datetime.now().year)")
           playwright install chromium
-          python -m nuitka --onefile --assume-yes-for-downloads --playwright-include-browser=all --include-package=wii_roms_tool,playwright \
-          --include-package-data=playwright --output-filename=Wii-Rom-Downloader-${{ matrix.filename }}${{ matrix.ext }} \
+          python -m nuitka --onefile \ 
+          --assume-yes-for-downloads \ 
+          --playwright-include-browser=all \ 
+          --include-package=wii_roms_tool \
+          --output-filename=Wii-Rom-Downloader-${{ matrix.filename }}${{ matrix.ext }} \
           --company-name="Tmaster055" \
           --product-name="Wii-Rom-Downloader" \
           --file-version=1.0 \
@@ -60,11 +65,13 @@ jobs:
           wii_roms_tool/src/main.py
 
       - uses: actions/upload-artifact@v4
+        if: matrix.os == 'ubuntu-latest'
         with:
           name: aniworld-${{ matrix.filename }}
           path: aniworld-${{ env.VERSION }}-${{ matrix.filename }}${{ matrix.ext }}
 
       - name: Upload Nuitka build to GitHub Release
+        if: matrix.os == 'ubuntu-latest'
         uses: softprops/action-gh-release@v2
         with:
           files: aniworld-${{ env.VERSION }}-${{ matrix.filename }}${{ matrix.ext }}
