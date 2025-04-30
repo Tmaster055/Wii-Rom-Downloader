@@ -48,7 +48,7 @@ jobs:
         shell: bash
         run: |
           Y=$(python -c "import datetime; print(datetime.datetime.now().year)")
-          python -m nuitka --onefile --assume-yes-for-downloads --playwright-include-browser=all --include-package=wii_roms_tool \
+          python -m nuitka --onefile --assume-yes-for-downloads --playwright-include-browser=all --include-package=wii_roms_tool,playwright \
           --include-package-data=playwright --output-filename=Wii-Rom-Downloader-${{ matrix.filename }}${{ matrix.ext }} \
           --company-name="Tmaster055" \
           --product-name="Wii-Rom-Downloader" \
