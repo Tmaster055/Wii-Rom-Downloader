@@ -5,7 +5,7 @@ import urllib3
 
 from bs4 import BeautifulSoup
 from playwright.sync_api import sync_playwright
-from common import get_vimms_id, download_file, extract_rename_folders
+from wii_roms_tool.src import get_vimms_id, download_file, extract_rename_folders
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
@@ -35,6 +35,7 @@ def download_romsfun_rom(url):
     for index, rom in enumerate(rom_links, start=1):
         print(f"{index}. {rom.text.strip()}")
 
+    selected_link = None
     try:
         choice = int(input("Enter the number of the ROM you want to download: "))
         if 1 <= choice <= len(rom_links):

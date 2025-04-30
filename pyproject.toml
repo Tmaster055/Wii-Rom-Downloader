@@ -29,4 +29,4 @@ classifiers = [
 Homepage = "https://github.com/Tmaster055/Wii-Rom-Downloader"
 Issues = "https://github.com/Tmaster055/Wii-Rom-Downloader/issues"
 [project.scripts]
-wii-roms-tool = "mc-roms-tool.src.main:main"
+wii-roms-tool = "wii_roms_tool.src.main:main"

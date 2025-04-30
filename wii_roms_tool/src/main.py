@@ -1,6 +1,4 @@
-from downloads import download_vimms_rom, download_romsfun_rom
-from search_vimms import search_for_rom_vimms
-from search_romsfun import search_for_rom_romsfun
+from wii_roms_tool.src import download_vimms_rom, download_romsfun_rom, search_for_rom_vimms, search_for_rom_romsfun
 
 
 def main():

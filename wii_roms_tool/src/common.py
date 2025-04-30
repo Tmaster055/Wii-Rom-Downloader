@@ -60,6 +60,7 @@ def extract_rename_folders(game_id: str, zip_path: str):
     print("Removed zipfile!")
 
     print("Renaming in id...")
+    game = "NamingError"
     for file in os.listdir(folder_path):
         file_path = os.path.join(folder_path, file)
 
