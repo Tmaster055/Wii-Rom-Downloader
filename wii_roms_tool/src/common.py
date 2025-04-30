@@ -7,6 +7,7 @@ import urllib3
 
 from tqdm import tqdm
 from bs4 import BeautifulSoup
+from playwright.sync_api import sync_playwright
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
@@ -78,10 +79,54 @@ def extract_rename_folders(game_id: str, zip_path: str):
             else:
                 os.remove(new_path)
 
+    if game_id == "game_id":
+        game_id = get_gametdb_id(game)
     os.rename(folder_path, folder_path.replace(game_id, f"{game}[{game_id}]"))
 
     print("All files have been renamed.")
 
 
+def get_gametdb_id(query):
+    def choose_region():
+        print("Choose the right Region for the rom:")
+        print("1. Europa (Australia)")
+        print("2. USA")
+        print("3. Japan")
+
+        while True:
+            region_choice = input("Choose (1/2/3): ")
+
+            if region_choice == "1":
+                return "P"
+            elif region_choice == "2":
+                return "E"
+            elif region_choice == "3":
+                return "J"
+            else:
+                print("Invalid Choice!")
+
+
+    url = f"https://www.gametdb.com/Main/Results?q={query}"
+    with sync_playwright() as p:
+        browser = p.chromium.launch(headless=False)
+        page = browser.new_page()
+
+        page.goto(url)
+
+        page.wait_for_selector(".gsc-resultsbox-visible .gs-title", timeout=20000)
+
+        url = page.locator(".gsc-resultsbox-visible .gs-title a").first.get_attribute("href")
+        print(url)
+
+        browser.close()
+
+        if url:
+            game_id = url.strip("/").split("/")[-1]
+            trimmed_id = game_id[:-3]
+            game_id = trimmed_id + choose_region() + "01"
+            return game_id
+        return None
+
+
 if __name__ == "__main__":
-    pass
+    print(get_gametdb_id("Mario Kart Wii"))
