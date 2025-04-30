@@ -62,13 +62,11 @@ jobs:
           wii_roms_tool/src/main.py
 
       - uses: actions/upload-artifact@v4
-        if: matrix.os == 'ubuntu-latest'
         with:
-          name: aniworld-${{ matrix.filename }}
-          path: aniworld-${{ env.VERSION }}-${{ matrix.filename }}${{ matrix.ext }}
+          name: Wii-Rom-Downloader-${{ matrix.filename }}
+          path: Wii-Rom-Downloader-${{ matrix.filename }}${{ matrix.ext }}
 
       - name: Upload Nuitka build to GitHub Release
-        if: matrix.os == 'ubuntu-latest'
         uses: softprops/action-gh-release@v2
         with:
-          files: aniworld-${{ env.VERSION }}-${{ matrix.filename }}${{ matrix.ext }}
+          files: Wii-Rom-Downloader-${{ matrix.filename }}${{ matrix.ext }}
