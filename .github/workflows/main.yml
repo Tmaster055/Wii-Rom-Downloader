@@ -18,15 +18,15 @@ jobs:
           - os: windows-latest
             ext: .exe
             filename: windows_x64
-            extra: ""
+            extra: --include-data-dir="/Users/runner/Library/Caches/ms-playwright=ms-playwright"
           - os: ubuntu-latest
             ext: ""
             filename: linux_x64
-            extra: ""
+            extra: --include-data-dir="/home/runner/.cache/ms-playwright=ms-playwright"
           - os: macos-latest
             ext: ""
             filename: macos_x64
-            extra: ""
+            extra: --include-data-dir="/Users/runner/Library/Caches/ms-playwright=ms-playwright"
 
     runs-on: ${{ matrix.os }}
 
@@ -49,7 +49,6 @@ jobs:
           Y=$(python -c "import datetime; print(datetime.datetime.now().year)")
           playwright install chromium
           python -m nuitka --onefile --assume-yes-for-downloads --playwright-include-browser=all --include-package=wii_roms_tool,playwright \
-          --include-data-dir="/Users/runner/Library/Caches/ms-playwright=ms-playwright" \
           --include-package-data=playwright --output-filename=Wii-Rom-Downloader-${{ matrix.filename }}${{ matrix.ext }} \
           --company-name="Tmaster055" \
           --product-name="Wii-Rom-Downloader" \
