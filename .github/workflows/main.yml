@@ -49,7 +49,8 @@ jobs:
           Y=$(python -c "import datetime; print(datetime.datetime.now().year)")
           playwright install chromium
           python -m nuitka --onefile --assume-yes-for-downloads --playwright-include-browser=all --include-package=wii_roms_tool,playwright \
-          --enable-plugin=playwright --include-package-data=playwright --output-filename=Wii-Rom-Downloader-${{ matrix.filename }}${{ matrix.ext }} \
+          --include-data-dir="/Users/runner/Library/Caches/ms-playwright=ms-playwright" \
+          --include-package-data=playwright --output-filename=Wii-Rom-Downloader-${{ matrix.filename }}${{ matrix.ext }} \
           --company-name="Tmaster055" \
           --product-name="Wii-Rom-Downloader" \
           --file-version=1.0 \
