@@ -1,7 +1,5 @@
 import os
 import sys
-import zipfile
-import py7zr
 import requests
 import urllib3
 
@@ -43,49 +41,6 @@ def download_file(url: str, installer_path: str, headers = None):
         sys.exit(1)
 
 
-def extract_rename_folders(game_id: str, zip_path: str):
-    print("Extracting Folders...")
-    if ".7z" in zip_path:
-        folder_path = zip_path.replace(".7z", "")
-        with py7zr.SevenZipFile(zip_path, mode="r") as archive:
-            archive.extractall(folder_path)
-            print("Folders extracted!")
-    else:
-        folder_path = zip_path.replace(".zip", "")
-        with zipfile.ZipFile(zip_path, mode="r") as archive:
-            archive.extractall(folder_path)
-            print("Folders extracted!")
-
-    print("Removing zipfiles...")
-    os.remove(zip_path)
-    print("Removed zipfile!")
-
-    print("Renaming in id...")
-    game = "NamingError"
-    for file in os.listdir(folder_path):
-        file_path = os.path.join(folder_path, file)
-
-        if os.path.isfile(file_path):
-            name, ext = os.path.splitext(file)
-
-            new_name = f"{game_id}{ext}"
-            new_path = os.path.join(folder_path, new_name)
-
-            os.rename(file_path, new_path)
-            print(f"Renamed: {file} → {new_name}")
-
-            if not ".txt" in ext:
-                game = name.split("(")[0]
-            else:
-                os.remove(new_path)
-
-    if game_id == "game_id":
-        game_id = get_gametdb_id(game)
-    os.rename(folder_path, folder_path.replace(game_id, f"{game}[{game_id}]"))
-
-    print("All files have been renamed.")
-
-
 def get_gametdb_id(query):
     def choose_region():
         print("Choose the right Region for the rom:")
@@ -120,12 +75,12 @@ def get_gametdb_id(query):
 
         browser.close()
 
-        if url:
-            game_id = url.strip("/").split("/")[-1]
-            trimmed_id = game_id[:-3]
-            game_id = trimmed_id + choose_region() + "01"
-            return game_id
-        return None
+    if url:
+        game_id = url.strip("/").split("/")[-1]
+        trimmed_id = game_id[:-3]
+        game_id = trimmed_id + choose_region() + "01"
+        return game_id
+    return None
 
 
 if __name__ == "__main__":
