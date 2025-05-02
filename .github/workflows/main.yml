@@ -49,7 +49,9 @@ jobs:
         run: |
           Y=$(python -c "import datetime; print(datetime.datetime.now().year)")
           playwright install chromium
+          BROWSER_JSON=$(python -c "import cloudscraper, os; print(os.path.join(os.path.dirname(cloudscraper.__file__), 'user_agent', 'browsers.json'))")
           python -m nuitka --onefile --assume-yes-for-downloads --playwright-include-browser=all --include-package=wii_roms_tool \
+          --include-data-files=$BROWSER_JSON=cloudscraper/user_agent/browsers.json \
           --output-filename=Wii-Rom-Downloader-${{ matrix.filename }}${{ matrix.ext }} \
           --company-name="Tmaster055" \
           --product-name="Wii-Rom-Downloader" \
