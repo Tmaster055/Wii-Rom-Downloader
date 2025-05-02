@@ -6,6 +6,7 @@ import urllib3
 from tqdm import tqdm
 from bs4 import BeautifulSoup
 from playwright.sync_api import sync_playwright
+from difflib import SequenceMatcher
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
@@ -60,23 +61,52 @@ def get_gametdb_id(query):
             else:
                 print("Invalid Choice!")
 
+    def similarity(a, b):
+        return SequenceMatcher(None, a.lower(), b.lower()).ratio()
 
     url = f"https://www.gametdb.com/Main/Results?q={query}"
+
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=False)
         page = browser.new_page()
 
         page.goto(url)
 
-        page.wait_for_selector(".gsc-resultsbox-visible .gs-title", timeout=20000)
+        page.wait_for_selector(".gs-title", timeout=20000)
 
-        url = page.locator(".gsc-resultsbox-visible .gs-title a").first.get_attribute("href")
-        print(url)
+        title_containers = page.locator(".gs-title")
+
+        best_match = None
+        best_similarity = 0
+
+        for i in range(title_containers.count()):
+            title_element = title_containers.nth(i)
+            html = title_element.inner_html()
+
+            soup = BeautifulSoup(html, "html.parser")
+            a_tag = soup.find("a")
+
+            if not a_tag:
+                continue
+
+            link = a_tag.get("href")
+            clean_title = a_tag.get_text().strip()
+
+            score = similarity(clean_title, query)
+            if score > best_similarity:
+                best_similarity = score
+                best_match = (clean_title, link)
 
         browser.close()
 
-    if url:
-        game_id = url.strip("/").split("/")[-1]
+    if best_match:
+        print(f"Best title match: {best_match[0]} with a similarity of {best_similarity:.2f}!")
+    else:
+        print("No matching title!")
+        return None
+
+    if best_match[1]:
+        game_id = best_match[1].strip("/").split("/")[-1]
         trimmed_id = game_id[:-3]
         game_id = trimmed_id + choose_region() + "01"
         return game_id
