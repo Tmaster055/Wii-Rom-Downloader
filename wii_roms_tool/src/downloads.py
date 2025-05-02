@@ -52,7 +52,7 @@ def download_romsfun_rom(url):
 
     print("Starting to fetch...")
     with sync_playwright() as p:
-        browser = p.chromium.launch(headless=False)
+        browser = p.chromium.launch(headless=True)
         page = browser.new_page()
 
         page.goto(selected_link, wait_until='domcontentloaded')
@@ -75,7 +75,7 @@ def download_vimms_rom(url):
         rom_downloader_path = os.path.join(download_path, "Rom-Downloader")
         os.makedirs(rom_downloader_path, exist_ok=True)
 
-        browser = p.chromium.launch(headless=False)
+        browser = p.chromium.launch(headless=True)
         context = browser.new_context(accept_downloads=True)
         page = context.new_page()
         page.goto(url)

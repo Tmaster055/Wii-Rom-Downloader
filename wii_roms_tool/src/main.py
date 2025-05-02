@@ -4,7 +4,7 @@ from wii_roms_tool.src import download_vimms_rom, download_romsfun_rom, search_f
 def main():
     print("Welcome to Wii-Rom-Downloader!")
     print("1: Vimms Lair")
-    print("2: Romsfun")
+    print("2: Romsfun (Recommended)")
 
     while True:
         answer = input("Which do you choose? ")

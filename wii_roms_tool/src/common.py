@@ -67,7 +67,7 @@ def get_gametdb_id(query):
     url = f"https://www.gametdb.com/Main/Results?q={query}"
 
     with sync_playwright() as p:
-        browser = p.chromium.launch(headless=False)
+        browser = p.chromium.launch(headless=True)
         page = browser.new_page()
 
         page.goto(url)
