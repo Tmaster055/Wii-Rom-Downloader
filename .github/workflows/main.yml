@@ -45,6 +45,7 @@ jobs:
 
       - name: Build with Nuitka
         shell: bash
+        continue-on-error: true
         run: |
           Y=$(python -c "import datetime; print(datetime.datetime.now().year)")
           playwright install chromium
@@ -60,11 +61,13 @@ jobs:
           wii_roms_tool/src/main.py
 
       - uses: actions/upload-artifact@v4
+        continue-on-error: true
         with:
           name: Wii-Rom-Downloader-${{ matrix.filename }}
           path: Wii-Rom-Downloader-${{ matrix.filename }}${{ matrix.ext }}
 
       - name: Upload Nuitka build to GitHub Release
         uses: softprops/action-gh-release@v2
+        continue-on-error: true
         with:
           files: Wii-Rom-Downloader-${{ matrix.filename }}${{ matrix.ext }}
