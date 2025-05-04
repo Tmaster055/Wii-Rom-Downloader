@@ -54,6 +54,13 @@ def download_romsfun_rom(url):
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=True)
         page = browser.new_page()
+        page.goto("https://example.com")
+        original_user_agent = page.evaluate("() => navigator.userAgent")
+        clean_user_agent = original_user_agent.replace("HeadlessChrome", "Chrome")
+        context = browser.new_context(
+            user_agent=clean_user_agent
+        )
+        page = context.new_page()
 
         page.goto(selected_link, wait_until='domcontentloaded')
         page.wait_for_selector('a#download')
