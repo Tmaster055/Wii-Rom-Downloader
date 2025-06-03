@@ -3,11 +3,11 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 [project]
 name = "wii-roms-tool"
-version = "0.0.2"
+version = "0.5"
 authors = [
   { name="Tmaster055" },
 ]
-description = "A minecraft server installer!"
+description = "A tool for automatically downloading wii roms"
 readme = "README.md"
 requires-python = ">=3.8"
 dependencies = [
