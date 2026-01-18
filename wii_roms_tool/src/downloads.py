@@ -25,16 +25,21 @@ def download_romsfun_rom(url):
     response = scraper.get(url)
 
     soup = BeautifulSoup(response.text, 'html.parser')
-    button = soup.select_one('.btn.btn-primary.btn-block.mx-auto.mb-4.small')
+    button = soup.select_one('a[href*="/download/"]')
 
-    if button:
-        url = button.get('href')
+    if button and button.has_attr("href"):
+        url = button["href"]
+        if not url.startswith("http"):
+            url = "https://romsfun.com" + url
     else:
-        raise ValueError("Button-Element not found!")
+        raise ValueError("Download button not found!")
 
     response = scraper.get(url)
     soup = BeautifulSoup(response.text, 'html.parser')
-    rom_links = soup.select('div.bg-white.border.rounded.shadow-sm.py-2.px-3.mb-4 table tbody tr td a')
+    rom_links = []
+
+    for a in soup.select('table tbody tr td a[href*="/download/"]'):
+        rom_links.append(a)
 
     print("Choose the ROM file you want to download:")
     for index, rom in enumerate(rom_links, start=1):
@@ -52,7 +57,7 @@ def download_romsfun_rom(url):
 
     print("Starting to fetch...")
     with sync_playwright() as p:
-        browser = p.chromium.launch(headless=True)
+        browser = p.firefox.launch(headless=True)
         page = browser.new_page()
         page.goto("https://example.com")
         original_user_agent = page.evaluate("() => navigator.userAgent")
@@ -63,8 +68,8 @@ def download_romsfun_rom(url):
         page = context.new_page()
 
         page.goto(selected_link, wait_until='domcontentloaded')
-        page.wait_for_selector('a#download')
-        download_link = page.query_selector('a#download').get_attribute('href')
+        page.wait_for_selector('a#download-link')
+        download_link = page.query_selector('a#download-link').get_attribute('href')
         browser.close()
 
     game_id = 'game_id'
@@ -82,7 +87,7 @@ def download_vimms_rom(url):
         rom_downloader_path = os.path.join(download_path, "Rom-Downloader")
         os.makedirs(rom_downloader_path, exist_ok=True)
 
-        browser = p.chromium.launch(headless=True)
+        browser = p.firefox.launch(headless=True)
         context = browser.new_context(accept_downloads=True)
         page = context.new_page()
         page.goto(url)

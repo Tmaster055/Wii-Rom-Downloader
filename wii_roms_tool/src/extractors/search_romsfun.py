@@ -13,15 +13,22 @@ def fetch_links(query):
     soup = BeautifulSoup(response.content, "html.parser")
 
     links = []
-    for div in soup.find_all('div', class_='col-archive-rom'):
-        a = div.find('a', href=True)
-        title_tag = div.find('h3')
-        if a and title_tag:
-            title = title_tag.text.strip()
-            link = a['href']
-            if not link.startswith("http"):
-                link = "https://romsfun.com" + link
-            links.append((title, link))
+
+    cards = soup.select("div.bg-white.rounded-xl")
+
+    for card in cards:
+        title_a = card.select_one("h3 a[href]")
+
+        if not title_a:
+            continue
+
+        title = title_a.get_text(strip=True)
+        link = title_a["href"]
+
+        if not link.startswith("http"):
+            link = "https://romsfun.com" + link
+
+        links.append((title, link))
 
     if not links:
         raise ValueError("No results found.")
